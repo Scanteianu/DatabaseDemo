@@ -1,0 +1,86 @@
+CREATE TABLE Person (  Id  INTEGER UNSIGNED,  LastName CHAR(20),  FirstName CHAR(20),  Address CHAR(50),  City  CHAR(20),  State  CHAR(2),  ZipCode INTEGER UNSIGNED,  Phone BIGINT UNSIGNED,  PRIMARY KEY (Id) );  
+CREATE TABLE Employee (  Id   INTEGER UNSIGNED,  SSN  INTEGER UNSIGNED,  StartDate DATE,  PayRate DECIMAL(9, 2) UNSIGNED,  Status ENUM('CSRep', 'MGR', 'INACTIVE'),  PRIMARY KEY (Id),  UNIQUE (SSN),  FOREIGN KEY (Id) REFERENCES PERSON (Id) ON DELETE NO ACTION ON UPDATE NO ACTION );
+  CREATE TABLE Customer (  Id   INTEGER UNSIGNED,  Email   CHAR(50),  CreditCardNum BIGINT UNSIGNED, Rating INTEGER UNSIGNED,  PRIMARY KEY (Id),  UNIQUE(Email),  FOREIGN KEY (Id) REFERENCES Person (Id) ON DELETE NO ACTION ON UPDATE NO ACTION );
+  CREATE VIEW CustomerView ( Id, LastName, FirstName, Address, City, State, ZipCode, Phone, Email,  CreditCardNum ) AS SELECT P.Id, P.LastName, P.FirstName, P.Address, P.City, P.State, P.ZipCode, P.Phone, C.Email, C.CreditCardNum FROM Person P, Customer C  WHERE P.Id = C.Id AND P.Id <> 0;
+   CREATE VIEW EmployeeView ( Id, LastName, FirstName, Address, City, State, ZipCode, Phone, SSN, StartDate, PayRate, Status ) AS  SELECT P.Id, P.LastName, P.FirstName, P.Address, P.City, P.State, P.ZipCode, P.Phone, E.SSN, E.StartDate, E.PayRate, E.Status FROM Person P, Employee E  WHERE P.Id = E.Id AND P.Id<> 0;
+CREATE TABLE Stock(  StockId  CHAR(10),  Name  CHAR(50),  Type  CHAR(20),  Price  DECIMAL(9,2) UNSIGNED,  NumShares DECIMAL(10,3) UNSIGNED,  PRIMARY KEY (StockId)     );
+CREATE TABLE Account(  CustomerId INTEGER UNSIGNED,  AccountNum INTEGER UNSIGNED,AccountCreateDate DATE,  PRIMARY KEY (CustomerId,AccountNum),  FOREIGN KEY (CustomerId) REFERENCES Customer(Id)  ON DELETE NO ACTION  ON UPDATE NO ACTION   );  
+CREATE TABLE Ownership(  OwnerId INTEGER UNSIGNED,  AccountNum INTEGER UNSIGNED,  StockId CHAR(10) NOT NULL,  NumShares DECIMAL(10,3) UNSIGNED,  PRIMARY KEY(OwnerId, AccountNum, StockId),  FOREIGN KEY(OwnerId,AccountNum) REFERENCES  Account(CustomerId,AccountNum) ON DELETE NO ACTION ON UPDATE NO ACTION, FOREIGN KEY(StockId) REFERENCES Stock(StockId) ON DELETE NO ACTION ON UPDATE CASCADE );
+ 
+ CREATE TABLE Price(  StockId  CHAR(10),  Timestamp  DATETIME,  Price  DECIMAL(9,2),  PRIMARY KEY(StockId,Timestamp),  FOREIGN KEY(StockId) REFERENCES Stock(StockId)  ON DELETE NO ACTION ON UPDATE CASCADE  );
+  
+ CREATE TABLE Suggestion(  CustomerId  INTEGER UNSIGNED,  StockId CHAR(10),  PRIMARY KEY (CustomerId, StockId),  FOREIGN KEY (CustomerId) REFERENCES Customer(Id) );
+  CREATE TABLE Transaction( OrderId INTEGER UNSIGNED, ClientId INTEGER UNSIGNED, AccountNum INTEGER UNSIGNED, TransType ENUM('buy', 'sell'), EmployeeId INTEGER UNSIGNED, StockId CHAR(10), Timestamp DATETIME, TransFee DECIMAL(5,2), StockPrice DECIMAL(9,2) UNSIGNED, NumStocks DECIMAL(10,3) UNSIGNED, PriceType ENUM('mkt','mktonclose','hidestop','trailstop'), PRIMARY KEY(OrderId), FOREIGN KEY(ClientId, AccountNum) REFERENCES Account(CustomerId, AccountNum) ON DELETE NO ACTION ON UPDATE NO ACTION, FOREIGN KEY(EmployeeId) REFERENCES Employee(Id) ON DELETE NO ACTION ON UPDATE NO ACTION, FOREIGN KEY(StockId) REFERENCES Stock(StockId) ON DELETE NO ACTION ON UPDATE CASCADE  );
+ CREATE TABLE ConditionalOrder(  SellerId INTEGER UNSIGNED,AccountNum INTEGER UNSIGNED, EmployeeId INTEGER UNSIGNED, StockId CHAR(10) NOT NULL,  PriceType ENUM('sellmktonclose','buymktonclose','hidestop','trailstop'),  Difference DECIMAL(9,4), Target DECIMAL(9, 2),  NumStocks DECIMAL(10,3),OrderTime DATETIME, PRIMARY KEY (SellerId,EmployeeId, StockId, PriceType, Difference,Target,NumStocks), FOREIGN KEY(SellerId) REFERENCES Customer(Id) ON DELETE NO ACTION  ON UPDATE NO ACTION, FOREIGN KEY(EmployeeId) REFERENCES Employee(Id) ON DELETE NO ACTION ON UPDATE NO ACTION, FOREIGN KEY(StockId) REFERENCES Stock(StockId) ON DELETE NO ACTION ON UPDATE NO ACTION );
+CREATE TABLE ConditionalHistory( SellerId INTEGER UNSIGNED,AccountNum INTEGER UNSIGNED, StockId CHAR(10),NumStocks DECIMAL(9,2), StockPrice DECIMAL(9,2), Target DECIMAL(9,2), Difference DECIMAL(9,2),PriceType ENUM('sellmktonclose','buymktonclose','hidestop','trailstop'), OrderTime DATETIME,UpdateTime DATETIME, PRIMARY KEY (SellerId, AccountNum, StockId,NumStocks,PriceType, Difference, Target, OrderTime),FOREIGN KEY(SellerId) REFERENCES Customer(Id) ON DELETE NO ACTION  ON UPDATE NO ACTION, FOREIGN KEY(EmployeeId) REFERENCES Employee(Id) ON DELETE NO ACTION ON UPDATE NO ACTION, FOREIGN KEY(StockId) REFERENCES Stock(StockId) ON DELETE NO ACTION ON UPDATE NO ACTION );
+
+
+-- Stock creation
+INSERT INTO Stock (StockId, Name, Type, Price, NumShares) VALUES ('GM','General Motors' ,'automotive',34.23,1000);
+INSERT INTO Stock (StockId, Name, Type, Price, NumShares) VALUES ('IBM','IBM','computer',91.41,500);
+INSERT INTO Stock (StockId, Name, Type, Price, NumShares) VALUES ('F', 'Ford', 'automotive',9.0,750);
+
+
+
+
+-- Customer
+INSERT INTO Person VALUES(0,null,null,null,null,null,0,0); --  needed for "deleting" people
+INSERT INTO Customer Values(0,0,0,0);
+INSERT INTO Employee VALUES(0,0, '2000-01-01', 0, 'INACTIVE');
+
+INSERT INTO Person VALUES(111111111,'Yang','Shang','123 Success Street','Stony Brook','NY',11790,5166328959);
+INSERT INTO Customer Values(111111111,'syang@cs.sunysb.edu',1234567812345678,1);
+
+INSERT INTO Person VALUES(222222222,'Du','Victor','456 Fortune Road','Stony Brook','NY',11790,5166324360);
+INSERT INTO Customer VALUES(222222222,'vicdu@cs.sunysb.edu',5678123456781234,1);
+
+INSERT INTO Person VALUES(333333333,'Smith','John','789 Peace Blvd.','Los Angeles','CA',93536,3154434321);INSERT INTO Customer VALUES(333333333,'jsmith@ic.sunysb.edu',2345678923456789,1);
+
+INSERT INTO Person VALUES(444444444,'Philip','Lewis','135 Knowledge Lane','Stony Brook','NY',11794,5166668888);
+INSERT INTO Customer VALUES(444444444,'pml@cs.sunysb.edu',67892345-67892345,1);
+
+	
+-- Employees, SSN used as IDs just cause why not?
+INSERT INTO Person VALUES(123456789,'Smith','David','123 College road','Stony Brook','NY',11790,5162152345);
+	INSERT INTO Employee VALUES(123456789,123456789, '2011-01-05', 60, 'CSRep');
+
+INSERT INTO Person VALUES(789123456,'Warren','David','456 Sunken Street','Stony Brook','NY',11794,6316329987);
+	INSERT INTO Employee VALUES(789123456,789123456,'2002-2-06',50,'MGR');
+
+
+--  Accounts
+INSERT INTO Account VALUES (444444444,1, '2010-1-06');
+INSERT INTO Account VALUES (222222222,1,'2010-1-06');
+
+INSERT INTO Ownership VALUES (444444444,1,'GM',250);
+INSERT INTO Ownership VALUES (444444444, 1, 'F', 100);
+INSERT INTO Ownership VALUES (222222222, 1, 'IBM', 50);
+
+-- Price History
+
+INSERT INTO Price VALUES ('GM', DATE_ADD(NOW(), INTERVAL -2 DAY), 34.23);
+INSERT INTO Price VALUES ('F', DATE_ADD(NOW(), INTERVAL -2 DAY), 9.0);
+INSERT INTO Price VALUES ('IBM', DATE_ADD(NOW(), INTERVAL -15 DAY), 95);
+INSERT INTO Price VALUES ('IBM', DATE_ADD(NOW(), INTERVAL -10 DAY), 100);
+INSERT INTO Price VALUES ('IBM', DATE_ADD(NOW(), INTERVAL -5 DAY), 89.98);
+INSERT INTO Price VALUES ('IBM', DATE_ADD(NOW(), INTERVAL -2 DAY), 91.41);
+
+-- Transaction history:
+INSERT INTO Transaction (OrderId, ClientId, AccountNum, TransType, EmployeeId, StockId, Timestamp, StockPrice, NumStocks, PriceType) VALUES  (1, 444444444,1,'buy',123456789,'GM',NOW(),(SELECT MAX(Price) FROM Stock WHERE StockId='GM'), 10, 'mkt');
+INSERT INTO Transaction (OrderId, ClientId, AccountNum, TransType, EmployeeId, StockId, Timestamp, StockPrice, NumStocks, PriceType) VALUES  (2, 222222222,1,'sell',123456789,'IBM',DATE_ADD(NOW(), INTERVAL -4 DAY),89.98, 10, 'hidestop');
+
+-- Login Info
+
+CREATE TABLE Login (
+  UserId INTEGER UNSIGNED,
+  Password char(50),
+  PRIMARY KEY (UserId), FOREIGN KEY (UserId) References Person (Id)
+);
+
+INSERT INTO Login (UserId, Password) VALUES
+(111111111, 'client1'),
+(123456789, 'csrep1'),
+(222222222, 'client2'),
+(333333333, 'client3'),
+(444444444, 'client4'),
+(789123456, 'manager1');

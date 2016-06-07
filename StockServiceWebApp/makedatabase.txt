@@ -1,0 +1,25 @@
+-- CREATE DOMAIN SOCIALSECNUMBER INTEGER UNSIGNED ( CHECK ( VALUE < 1000000000 )   );
+--  CREATE DOMAIN CCNUMBER BIGINT UNSIGNED (  CHECK ( VALUE < 10000000000000000 AND VALUE > 999999999999999 ) );
+--  CREATE DOMAIN ZIPCODE INTEGER UNSIGNED (  CHECK ( VALUE < 100000 AND VALUE > 9999 ) );
+--  CREATE DOMAIN PHONENUMBER BIGINT UNSIGNED (  CHECK ( VALUE < 10000000000 AND VALUE > 999999999 ) );
+CREATE TABLE Person (  Id  INTEGER UNSIGNED,  LastName CHAR(20),  FirstName CHAR(20),  Address CHAR(50),  City  CHAR(20),  State  CHAR(2),  ZipCode INTEGER UNSIGNED,  Phone BIGINT UNSIGNED,  PRIMARY KEY (Id) );  
+CREATE TABLE Employee (  Id   INTEGER UNSIGNED,  SSN  INTEGER UNSIGNED,  StartDate DATE,  PayRate DECIMAL(9, 2) UNSIGNED,  Status ENUM('CSRep', 'MGR', 'INACTIVE'),  PRIMARY KEY (Id),  UNIQUE (SSN),  FOREIGN KEY (Id) REFERENCES PERSON (Id) ON DELETE NO ACTION ON UPDATE NO ACTION );
+  CREATE TABLE Customer (  Id   INTEGER UNSIGNED,  Email   CHAR(50),  CreditCardNum BIGINT UNSIGNED, Rating INTEGER UNSIGNED,  PRIMARY KEY (Id),  UNIQUE(Email),  FOREIGN KEY (Id) REFERENCES Person (Id) ON DELETE NO ACTION ON UPDATE NO ACTION );
+  CREATE VIEW CustomerView ( Id, LastName, FirstName, Address, City, State, ZipCode, Phone, Email,  CreditCardNum, Rating ) AS SELECT P.Id, P.LastName, P.FirstName, P.Address, P.City, P.State, P.ZipCode, P.Phone, C.Email, C.CreditCardNum, C.Rating FROM Person P, Customer C  WHERE P.Id = C.Id AND P.Id <> 0;
+   CREATE VIEW EmployeeView ( Id, LastName, FirstName, Address, City, State, ZipCode, Phone, SSN, StartDate, PayRate, Status ) AS  SELECT P.Id, P.LastName, P.FirstName, P.Address, P.City, P.State, P.ZipCode, P.Phone, E.SSN, E.StartDate, E.PayRate, E.Status FROM Person P, Employee E  WHERE P.Id = E.Id AND P.Id<> 0;
+CREATE TABLE Stock(  StockId  CHAR(10),  Name  CHAR(50),  Type  CHAR(20),  Price  DECIMAL(9,2) UNSIGNED,  NumShares DECIMAL(10,3) UNSIGNED,  PRIMARY KEY (StockId)     );
+CREATE TABLE Account(  CustomerId INTEGER UNSIGNED,  AccountNum INTEGER UNSIGNED,AccountCreateDate DATE,  PRIMARY KEY (CustomerId,AccountNum),  FOREIGN KEY (CustomerId) REFERENCES Customer(Id)  ON DELETE NO ACTION  ON UPDATE NO ACTION   );  
+CREATE TABLE Ownership(  OwnerId INTEGER UNSIGNED,  AccountNum INTEGER UNSIGNED,  StockId CHAR(10) NOT NULL,  NumShares DECIMAL(10,3) UNSIGNED,  PRIMARY KEY(OwnerId, AccountNum, StockId),  FOREIGN KEY(OwnerId,AccountNum) REFERENCES  Account(CustomerId,AccountNum) ON DELETE NO ACTION ON UPDATE NO ACTION, FOREIGN KEY(StockId) REFERENCES Stock(StockId) ON DELETE NO ACTION ON UPDATE CASCADE );
+CREATE TABLE Login(  UserId INTEGER UNSIGNED, Password CHAR(50),  PRIMARY KEY (UserId),FOREIGN KEY(UserId) REFERENCES Person (Id));
+ 
+ CREATE TABLE Price(  StockId  CHAR(10),  Timestamp  DATETIME,  Price  DECIMAL(9,2),  PRIMARY KEY(StockId,Timestamp),  FOREIGN KEY(StockId) REFERENCES Stock(StockId)  ON DELETE NO ACTION ON UPDATE CASCADE  );
+  
+ CREATE TABLE Suggestion(  CustomerId  INTEGER UNSIGNED,  StockId CHAR(10),  PRIMARY KEY (CustomerId, StockId),  FOREIGN KEY (CustomerId) REFERENCES Customer(Id) );
+  CREATE TABLE Transaction( OrderId INTEGER UNSIGNED, ClientId INTEGER UNSIGNED, AccountNum INTEGER UNSIGNED, TransType ENUM('buy', 'sell'), EmployeeId INTEGER UNSIGNED, StockId CHAR(10), Timestamp DATETIME, TransFee DECIMAL(5,2), StockPrice DECIMAL(9,2) UNSIGNED, NumStocks DECIMAL(10,3) UNSIGNED, PriceType ENUM('mkt','mktonclose','hidestop','trailstop'), PRIMARY KEY(OrderId), FOREIGN KEY(ClientId, AccountNum) REFERENCES Account(CustomerId, AccountNum) ON DELETE NO ACTION ON UPDATE NO ACTION, FOREIGN KEY(EmployeeId) REFERENCES Employee(Id) ON DELETE NO ACTION ON UPDATE NO ACTION, FOREIGN KEY(StockId) REFERENCES Stock(StockId) ON DELETE NO ACTION ON UPDATE CASCADE  );
+  CREATE TABLE ConditionalOrder(  SellerId INTEGER UNSIGNED,AccountNum INTEGER UNSIGNED, EmployeeId INTEGER UNSIGNED, StockId CHAR(10) NOT NULL,  PriceType ENUM('sellmktonclose','buymktonclose','hidestop','trailstop'),  Difference DECIMAL(9,4), Target DECIMAL(9, 2),  NumStocks DECIMAL(10,3),OrderTime DATETIME, PRIMARY KEY (SellerId,EmployeeId, StockId, PriceType, Difference,Target,NumStocks), FOREIGN KEY(SellerId) REFERENCES Customer(Id) ON DELETE NO ACTION  ON UPDATE NO ACTION, FOREIGN KEY(EmployeeId) REFERENCES Employee(Id) ON DELETE NO ACTION ON UPDATE NO ACTION, FOREIGN KEY(StockId) REFERENCES Stock(StockId) ON DELETE NO ACTION ON UPDATE NO ACTION );
+ 
+-- CHECK((SELECT S.NumShares FROM Stock S)=(SELECT SUM(O.NumShares)FROM Ownership O WHERE S.StockId=O.StockId));
+--  CHECK( (SELECT COUNT(*) FROM Transaction)=(SELECT COUNT(*) FROM Price P, Transaction T WHERE T.StockPrice=P.StockPrice));
+-- CHECK ( NOT EXISTS (  SELECT P.Id FROM Employee E, Person P, Customer C  WHERE E.Id <> P.Id AND C.Id <> P.Id  );
+--  CHECK(NOT EXISTS( SELECT * FROM OWNERSHIP O  WHERE (   WHERE O.NumStocks < (SELECT SUM(NumStocks) FROM ConditionalOrder WHERE O.SellerID = ConditionalOrder.SellerID  AND StockID = StockID)));
+--  CHECK (NOT EXISTS(SELECT * FROM ConditionalOrder WHERE NumStocks< 0 AND SellPrice<0));
